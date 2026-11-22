@@ -5,7 +5,7 @@
   "contextFileName": "assets/GEMINI.md",
   "mcpServers": {
     "poly": {
-      "command": "poly",
+      "command": "${extensionPath}/scripts/mcp-launch.sh",
       "args": [
         "mcp"
       ]

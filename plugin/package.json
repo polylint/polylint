@@ -38,7 +38,8 @@
     ".pi/skills/poly-tiers-and-scope/SKILL.md",
     ".pi/skills/poly-tiers-and-scope/index.md",
     "README.md",
-    "assets/"
+    "assets/",
+    "scripts/"
   ],
   "homepage": "https://github.com/polylint/polylint",
   "keywords": [

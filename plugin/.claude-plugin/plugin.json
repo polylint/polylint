@@ -19,7 +19,7 @@
   ],
   "mcpServers": {
     "poly": {
-      "command": "poly",
+      "command": "${CLAUDE_PLUGIN_ROOT}/scripts/mcp-launch.sh",
       "args": [
         "mcp"
       ]
