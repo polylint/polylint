@@ -1,9 +1,9 @@
 {
   "schema_version": "v1",
-  "source_hash": "blake3:8d57e5b63731e12a8ffac955eae3ba13d60ea6a99307e2950bf00f4cf7d4945a",
+  "source_hash": "blake3:e29edb63f2181285397efb084a4e54e55082381ef957914b76eb12f9e897c4f4",
   "outputs": {
     ".claude-plugin/plugin.json": {
-      "content_hash": "blake3:5060e1b52096de7400771577b5a3db7badea88463d5a26007375f2e2468cb29c",
+      "content_hash": "blake3:a6ddf00a4c02f50f7172872706ea30dd2bd8758b8fa29248ad03c1b90973eaa3",
       "mode": "0644"
     },
     ".codex-plugin/plugin.json": {
@@ -19,7 +19,7 @@
       "mode": "0644"
     },
     ".cursor-plugin/plugin.json": {
-      "content_hash": "blake3:8a19c3a910387563a89dbc3ce036f60a0b41494c1212bd0997003d4e3e7002d7",
+      "content_hash": "blake3:ac6c24508df2824664b8ba29ccc2d91c5dce6dc5e6d90c401ef2dfc073b828f3",
       "mode": "0644"
     },
     ".cursor-plugin/skills/poly-lint-and-format/SKILL.md": {
@@ -191,11 +191,11 @@
       "mode": "0644"
     },
     ".mcp.json": {
-      "content_hash": "blake3:1f48ad7a5c9b4d3cd0492e560670931680c92b238653e17bfa39225b56f91c9b",
+      "content_hash": "blake3:ac1b24270af25592d7457716d3101396723a8ec283e9df9abf7634ac740267f1",
       "mode": "0644"
     },
     ".opencode/ai-rulez-bundle.json": {
-      "content_hash": "blake3:16f01bd0b4ea4525aa4afc24246dcdc26743aad47093bc03be945d4fcf59e519",
+      "content_hash": "blake3:b0c30192dd4c19b5bfa74ad5000bb1a9e514202eeddebb51354042a8cd122f9a",
       "mode": "0644"
     },
     ".opencode/ai-rulez-content.js": {
@@ -323,24 +323,28 @@
       "mode": "0644"
     },
     "gemini-extension.json": {
-      "content_hash": "blake3:62480146019e2ba342de68b0778155436c80a49ab973c8da04140691c24e4ffd",
+      "content_hash": "blake3:eb5d8c9af8c743dd58b93787c322e4717fc55bffc904f30b07874a0a9d97f1c3",
       "mode": "0644"
     },
     "kimi.plugin.json": {
-      "content_hash": "blake3:40f1221235a12214125bfbf68df8f621c61f954084e822a54ba67d869ea461b2",
+      "content_hash": "blake3:cee8aa16b85186c3a33bba162ca1c7781c929ac342344193405b62180af0a272",
       "mode": "0644"
     },
     "mcp.json": {
-      "content_hash": "blake3:51ea6b8581c4a3f8400616e85373ae7d1e87484adbca2877adf3818a1b44772d",
+      "content_hash": "blake3:e8e4ff76b990ee141e80ff933717854d00c47a71fbeeb9971eef0f5a413b068e",
       "mode": "0644"
     },
     "package.json": {
-      "content_hash": "blake3:5e6d4e51d2844ff0751b77210e9e93ba950dd17ff640ea7ceb893827b2327a1f",
+      "content_hash": "blake3:05373f6884d6d796fe805e964e95fc712a9a7fd2955bbd43f2ec476a6f75cf75",
       "mode": "0644"
     },
     "plugin.json": {
       "content_hash": "blake3:bf36072731eb90ebc5b45e68fc5f9fdc3d3b09ce70463bd98b2a2b8c4699c945",
       "mode": "0644"
+    },
+    "scripts/mcp-launch.sh": {
+      "content_hash": "blake3:a720a80eb75cc1aae2b1b51678e4949883fc9d2dbafddf3e2e6832dcbedba497",
+      "mode": "0755"
     },
     "skills/poly-lint-and-format/SKILL.md": {
       "content_hash": "blake3:29a286ad6162c490533ebd086a76e34dda6432776e8a5f9f71d0c5e1a6438a29",
@@ -384,7 +388,8 @@
     }
   },
   "includes": [
-    "assets/GEMINI.md"
+    "assets/GEMINI.md",
+    "scripts/mcp-launch.sh"
   ],
   "managed": {
     "package.json": [

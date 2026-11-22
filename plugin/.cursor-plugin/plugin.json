@@ -21,7 +21,7 @@
   "skills": "./skills/",
   "mcpServers": {
     "poly": {
-      "command": "poly",
+      "command": "./scripts/mcp-launch.sh",
       "args": [
         "mcp"
       ]

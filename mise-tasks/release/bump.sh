@@ -169,6 +169,13 @@ if [[ "$plugin_block_version" != "$VERSION" ]]; then
   exit 1
 fi
 
+echo "→ plugin/.ai-rulez/scripts/mcp-launch.sh PINNED_VERSION → $VERSION"
+VERSION="$VERSION" perl -pi -e 's/^(PINNED_VERSION=")[^"]*(")/$1$ENV{VERSION}$2/' plugin/.ai-rulez/scripts/mcp-launch.sh
+grep -qxF "PINNED_VERSION=\"$VERSION\"" plugin/.ai-rulez/scripts/mcp-launch.sh || {
+  echo "error: plugin/.ai-rulez/scripts/mcp-launch.sh PINNED_VERSION did not move to '$VERSION'" >&2
+  exit 1
+}
+
 echo "→ regenerating ai-rulez plugin outputs"
 AI_RULEZ="${AI_RULEZ:-ai-rulez}"
 "$AI_RULEZ" generate --plugin

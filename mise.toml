@@ -150,6 +150,11 @@ run = [
   { task = "plugin:sync-skills --check" },
 ]
 
+[tasks."plugin:test:launcher"]
+description = "Run the Bats contract tests for the plugin's MCP launcher (needs bats on PATH)"
+env = { BATS_LIB_PATH = "{{config_root}}/mise-tasks/tests/lib" }
+run = "bats --print-output-on-failure mise-tasks/tests/bats"
+
 [tasks."plugin:test"]
 description = "Verify OpenCode, Hermes protocol, and public skill contracts"
 run = [

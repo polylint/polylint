@@ -4,7 +4,7 @@
     "poly": {
       "type": "local",
       "command": [
-        "poly",
+        "${PLUGIN_ROOT}/scripts/mcp-launch.sh",
         "mcp"
       ]
     }

@@ -7,7 +7,7 @@ usage: /poly-fix [paths]
 <!--
 AI-RULEZ :: GENERATED FILE — DO NOT EDIT
 Content-Hash: blake3:6c4829d259e62209da08c9fa072488da04fcdcd1360080aad2402dc09087ad14
-Source-Hash: blake3:8d57e5b63731e12a8ffac955eae3ba13d60ea6a99307e2950bf00f4cf7d4945a
+Source-Hash: blake3:e29edb63f2181285397efb084a4e54e55082381ef957914b76eb12f9e897c4f4
 Schema-Version: v1
 -->
 

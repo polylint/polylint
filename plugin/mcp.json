@@ -3,7 +3,7 @@
   "mcpServers": {
     "poly": {
       "type": "stdio",
-      "command": "poly",
+      "command": "./scripts/mcp-launch.sh",
       "args": [
         "mcp"
       ]
