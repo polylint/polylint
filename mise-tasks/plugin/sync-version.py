@@ -25,6 +25,7 @@ on drift.
 
 from __future__ import annotations
 
+import json
 import re
 import sys
 from pathlib import Path
@@ -40,6 +41,9 @@ LAUNCHER = ROOT / "plugin" / ".ai-rulez" / "scripts" / "mcp-launch.sh"
 # ~keep The launcher pins the exact release it downloads and the minimum binary version it accepts,
 # so it has to move with every release exactly like the plugin manifest does.
 LAUNCHER_PIN_RE = re.compile(r'(?m)^(PINNED_VERSION=")([^"]*)(")')
+SERVER_JSON = ROOT / "server.json"
+NPM_PACKAGE_JSON = ROOT / "npm-package" / "package.json"
+MCP_NAME = "io.github.polylint/polylint"
 SYNC_HINT = (
     "run `mise run plugin:sync-version` and `mise run plugin:generate` to re-pin the plugin and regenerate its bundles"
 )
@@ -77,6 +81,31 @@ def transform_launcher(version: str) -> tuple[str, str]:
     if substitutions == 0:
         sys.exit(f"could not read PINNED_VERSION from {LAUNCHER.relative_to(ROOT)}")
     return original, updated
+
+
+def server_json_versions() -> tuple[str, list[str]]:
+    """Read the MCP Registry entry's ``version`` and each package ``version`` from ``server.json``."""
+    data = json.loads(SERVER_JSON.read_text(encoding="utf-8"))
+    return data["version"], [package["version"] for package in data["packages"]]
+
+
+def transform_server_json(version: str) -> tuple[str, str]:
+    """Rewrite the registry entry's ``version`` and every package ``version`` in ``server.json``."""
+    original = SERVER_JSON.read_text(encoding="utf-8")
+    data = json.loads(original)
+    data["version"] = version
+    for package in data["packages"]:
+        package["version"] = version
+    return original, json.dumps(data, indent=2) + "\n"
+
+
+def mcp_name_problem() -> str | None:
+    """Describe a mismatch between the registry name and the npm ``mcpName`` the registry verifies."""
+    server_name = json.loads(SERVER_JSON.read_text(encoding="utf-8"))["name"]
+    npm_name = json.loads(NPM_PACKAGE_JSON.read_text(encoding="utf-8")).get("mcpName")
+    if server_name != MCP_NAME or npm_name != MCP_NAME:
+        return f"server.json name={server_name!r} and npm-package/package.json mcpName={npm_name!r} must both be {MCP_NAME!r}"
+    return None
 
 
 def transform(version: str) -> tuple[str, str]:
@@ -118,6 +147,12 @@ def report_drift(expected: str, core: str, plugin: str, pin: str) -> int:
         print(f"  {PLUGIN_CONFIG.relative_to(ROOT)} [plugin].version -> {plugin}")
     if pin != expected:
         print(f"  {LAUNCHER.relative_to(ROOT)} PINNED_VERSION -> {pin}")
+    entry, packages = server_json_versions()
+    if entry != expected or any(version != expected for version in packages):
+        print(f"  {SERVER_JSON.relative_to(ROOT)} version -> {entry}, packages -> {packages}")
+    problem = mcp_name_problem()
+    if problem:
+        print(f"  {problem}")
     print(SYNC_HINT)
     return 1
 
@@ -130,20 +165,28 @@ def main() -> int:
     if expect is not None:
         plugin = plugin_version()
         pin = launcher_pin()
-        if core == expect and plugin == expect and pin == expect:
+        entry, packages = server_json_versions()
+        registry_ok = entry == expect and all(version == expect for version in packages)
+        if core == expect and plugin == expect and pin == expect and registry_ok and mcp_name_problem() is None:
             print(f"plugin, launcher pin and core all at {expect}")
             return 0
         return report_drift(expect, core, plugin, pin)
 
     original, updated = transform(core)
     launcher_original, launcher_updated = transform_launcher(core)
-    if original == updated and launcher_original == launcher_updated:
+    problem = mcp_name_problem()
+    if problem:
+        print(problem)
+        return 1
+    server_original, server_updated = transform_server_json(core)
+    if original == updated and launcher_original == launcher_updated and server_original == server_updated:
         return 0
     if "--check" in argv:
         return report_drift(core, core, plugin_version(), launcher_pin())
     PLUGIN_CONFIG.write_text(updated, encoding="utf-8")
     LAUNCHER.write_text(launcher_updated, encoding="utf-8")
-    print(f"synced plugin version and launcher pin -> {core}")
+    SERVER_JSON.write_text(server_updated, encoding="utf-8")
+    print(f"synced plugin version, launcher pin and server.json -> {core}")
     return 0
 
 

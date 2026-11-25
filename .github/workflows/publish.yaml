@@ -337,6 +337,24 @@ jobs:
             fi
           done < <(jq -r '.optionalDependencies[]' npm-package/package.json)
 
+          # The MCP Registry verifies the npm package itself: it must exist at the entry's version
+          # and carry the `mcpName` that matches the entry's name.
+          jq -e --arg v "$target_version" '
+            .name == "io.github.polylint/polylint"
+            and .version == $v
+            and (.packages | length == 1)
+            and .packages[0].registryType == "npm"
+            and .packages[0].identifier == "@polylint/polylint"
+            and .packages[0].version == $v
+          ' server.json >/dev/null || {
+            echo "::error::server.json does not match release $target_version; run \`mise run plugin:sync-version\`"
+            exit 1
+          }
+          jq -e '.mcpName == "io.github.polylint/polylint"' npm-package/package.json >/dev/null || {
+            echo "::error::npm-package/package.json lacks the mcpName the MCP Registry verifies"
+            exit 1
+          }
+
           pypi_version="$(grep -E '^version = "' pip-package/pyproject.toml | head -1 | cut -d'"' -f2)"
           if [ "$pypi_version" != "$target_version" ]; then
             echo "::error::pip-package/pyproject.toml version mismatch: expected $target_version, got $pypi_version"
@@ -2181,6 +2199,104 @@ jobs:
             publish_one "${dir%/}"
           done
           publish_one npm-package
+
+  # Additive best-effort, deliberately NOT in any finalize `needs`: the MCP Registry is a preview
+  # service, and its outage must not hold a release. Registry versions are immutable, so an existing
+  # version is a skip, never a failure. The registry verifies the npm package itself (it must exist
+  # at this version and carry `mcpName`), hence the wait below.
+  publish_mcp_registry:
+    name: Publish MCP Registry entry
+    needs: [meta, publish_npm]
+    if: >-
+      ${{ !inputs.plugins-only && !cancelled() && needs.publish_npm.result == 'success' }}
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      id-token: write
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v7
+        with:
+          ref: ${{ github.event_name == 'workflow_dispatch' && github.event.inputs.tag || '' }}
+
+      - name: Assert server.json describes this release
+        env:
+          VERSION: ${{ needs.meta.outputs.version }}
+        run: |
+          set -euo pipefail
+          jq -e --arg v "$VERSION" '
+            .name == "io.github.polylint/polylint"
+            and .version == $v
+            and (.packages | length == 1)
+            and .packages[0].registryType == "npm"
+            and .packages[0].identifier == "@polylint/polylint"
+            and .packages[0].version == $v
+          ' server.json >/dev/null || {
+            echo "::error::server.json does not match release ${VERSION}; run \`mise run plugin:sync-version\`"
+            exit 1
+          }
+          jq -e --arg v "$VERSION" '.version == $v and .mcpName == "io.github.polylint/polylint"' \
+            npm-package/package.json >/dev/null || {
+            echo "::error::npm-package/package.json does not match release ${VERSION} or lacks the mcpName the registry verifies"
+            exit 1
+          }
+
+      - name: Check whether the registry already holds this version
+        id: exists
+        env:
+          VERSION: ${{ needs.meta.outputs.version }}
+        run: |
+          set -euo pipefail
+          status="$(curl -sS -o /dev/null -w '%{http_code}' \
+            "https://registry.modelcontextprotocol.io/v0.1/servers/io.github.polylint%2Fpolylint/versions/${VERSION}")"
+          case "$status" in
+            200) echo "exists=true" >>"$GITHUB_OUTPUT"; echo "Registry already holds ${VERSION}; nothing to publish." ;;
+            404) echo "exists=false" >>"$GITHUB_OUTPUT" ;;
+            *) echo "::error::unexpected HTTP ${status} from the MCP Registry"; exit 1 ;;
+          esac
+
+      - name: Wait for the npm package to be installable
+        if: ${{ steps.exists.outputs.exists != 'true' }}
+        env:
+          VERSION: ${{ needs.meta.outputs.version }}
+        run: |
+          set -euo pipefail
+          for _ in $(seq 1 60); do
+            if curl -fsS -o /dev/null "https://registry.npmjs.org/@polylint%2Fpolylint/${VERSION}"; then
+              exit 0
+            fi
+            sleep 5
+          done
+          echo "::error::@polylint/polylint@${VERSION} is not visible on npm"
+          exit 1
+
+      - name: Install mcp-publisher
+        if: ${{ steps.exists.outputs.exists != 'true' }}
+        run: |
+          set -euo pipefail
+          # ~keep Pinned and checksummed: releases/latest resolves at run time, so an upstream
+          # release would land in a publish job unreviewed. Bump the version and the digest together
+          # from registry_<version>_checksums.txt on the upstream release.
+          version="v1.8.1"
+          sha256="a06c9096dcb9727c13555b6be26c7effa707b01f06a4c561ba7a3635443cf2cc"
+          archive="mcp-publisher_linux_amd64.tar.gz"
+          curl -fsSL -o "$archive" \
+            "https://github.com/modelcontextprotocol/registry/releases/download/${version}/${archive}"
+          echo "${sha256}  ${archive}" | sha256sum -c -
+          tar -xzf "$archive" mcp-publisher
+          ./mcp-publisher --version
+
+      - name: Validate server.json
+        if: ${{ steps.exists.outputs.exists != 'true' }}
+        run: ./mcp-publisher validate server.json
+
+      - name: Authenticate to the MCP Registry
+        if: ${{ steps.exists.outputs.exists != 'true' }}
+        run: ./mcp-publisher login github-oidc
+
+      - name: Publish server to the MCP Registry
+        if: ${{ steps.exists.outputs.exists != 'true' }}
+        run: ./mcp-publisher publish server.json
 
   publish_plugin_npm:
     name: Publish npm agent plugin (OpenCode and Pi)
